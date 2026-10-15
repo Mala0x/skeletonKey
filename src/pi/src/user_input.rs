@@ -1,5 +1,6 @@
 use colored::{Colorize};
-use std::{fs, io};
+use std::{env::home_dir, fs, io};
+use crate::{common, execute_app::get_user_selection};
 
 fn get_user_choice_stdin() -> io::Result<String> {
     let mut buffer = String::new();
@@ -8,33 +9,46 @@ fn get_user_choice_stdin() -> io::Result<String> {
     Ok(buffer)
 }
 
-fn get_user_app_choice_pretty(stdin_string: String) -> Result<u16, &'static str> {
+fn get_user_app_choice_pretty(stdin_string: String) -> Result<usize, &'static str> {
     let cleaned = stdin_string.trim();
 
     if let Some(hex_str) = cleaned.strip_prefix("0x") {
-        return u16::from_str_radix(hex_str, 16)
+        return usize::from_str_radix(hex_str, 16)
             .map_err(|_| "Error with converting from stdin string to int!");
     }
 
-    cleaned.parse::<u16>().map_err(|_| "The conversion from stdin string to int failed!")
+    cleaned.parse::<usize>().map_err(|_| "The conversion from stdin string to int failed!")
 }
 
-fn print_applications() {
+fn get_and_print_applications() -> Result<Vec<std::fs::DirEntry>, u16> {
     
-    let entries = match fs::read_dir("/home/mala/Documents/skeletonKey/apps") {
+    let Some(home_dir_buf) = home_dir() else {
+        eprintln!("I could not find your home directroy!");
+        return Err(common::HOME_FOLDER_NOT_FOUND);
+    };
+
+    let apps_path = home_dir_buf.join("Documents/skeletonKey/apps");
+
+    let entries = match fs::read_dir(&apps_path) {
         Ok(entries) => entries,
         Err(err) => {
             eprintln!("The folder with apps does not exist! Err: {err}");
-            return;
+            println!("Please create the folder ~/Documents/skeletonKey/apps");
+            return Err(common::APPLICATION_FOLDER_NOT_FOUND);
         }
     };
 
-    for (index, entry) in entries.enumerate() {
-        if let Ok(entry) = entry {
-            println!("Option {:#x}: {}", index, entry.file_name().to_string_lossy());
-        }
+    let apps: Vec<std::fs::DirEntry> = entries.filter_map(|e| e.ok()).collect();
+
+    if apps.is_empty() {
+        eprintln!("No files found in the apps folder!");
+        return Err(common::NO_FILES_IN_APPS_FOLDER);
     }
 
+    for (index, entry) in apps.iter().enumerate() {
+        println!("Option {:#x}: {}", index, entry.file_name().to_string_lossy());
+    }
+    Ok(apps)
 }
 
 pub fn print_main_menu() {
@@ -60,14 +74,31 @@ pub fn print_main_menu() {
     println!("{}", logo);
     println!("Welcome to your system sir");
 
-    print_applications();
+    let user_choice_numerical: usize;
+    let application_vec: Vec<std::fs::DirEntry>;
+
+    match get_and_print_applications() {
+        Ok(apps) => application_vec = apps,
+        Err(_e) => {
+            eprintln!("Could not get and print application!");
+            return;
+        },
+    }
     
     match get_user_choice_stdin() {
         Ok(raw_input) => match get_user_app_choice_pretty(raw_input) {
-            Ok(choice) => println!("Selected: {choice:#x}"),
-            Err(e) => eprintln!("Invalid selection: {e}"),
+            Ok(choice) => user_choice_numerical = choice,
+            Err(e) => { 
+                eprintln!("Invalid selection: {e}");
+                return;
+            },
         },
-        Err(e) => eprintln!("Failed to read input: {e}"),
+        Err(e) => {
+            eprintln!("Failed to read input: {e}");
+            return;
+        },
     }
+
+    let _ = get_user_selection(user_choice_numerical, application_vec);
 
 }
