@@ -1,0 +1,4 @@
+    Checking pi v0.1.0 (/home/mala/Documents/programming/skeletonKey/src/pi)
+error: could not compile `pi` (bin "pi") due to 1 previous error; 1 warning emitted
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `pi` (bin "pi" test) due to 1 previous error; 1 warning emitted
