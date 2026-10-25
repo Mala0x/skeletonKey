@@ -1,4 +1,4 @@
-use std::io;
+use std::{env::home_dir, fs::DirEntry, io, os::unix::process::CommandExt, process::Command};
 
 use colored::Colorize;
 
@@ -71,42 +71,92 @@ fn sanitize_user_input(user_choice: &String) -> Result<u16, &'static str> {
 
 }
 
+fn get_installed_apps() -> Result<Vec<DirEntry>, &'static str> {
+    if let Some(home_dir) = home_dir() {
+        // TODO: make this a non hardcoded path string
+        let application_folder = std::fs::read_dir(home_dir.as_path().join("Documents/Programming/skeletonKey/apps"));
+
+        let mut application_vec: Vec<DirEntry> = vec![];
+        
+        // Insert multiple checks if a folder actually exists and stuff
+        for (index, app) in application_folder.unwrap().enumerate() {
+            application_vec.insert(index, app.unwrap());
+        }
+        return Ok(application_vec);
+    } else {
+        return Err("I could not get applications in the default application folder!");
+    }
+}
+
 fn launch_applications_menu() {
-    println!("We want to launch an application!");
+    println!("Hello this is a list of all the launchable programs that are installed on the system at this moment!");
+    
+    if let Ok(installed_apps) = get_installed_apps() {
+
+        for (index, app) in installed_apps.iter().enumerate() {
+            println!("{}: {}", index, app.file_name().into_string().unwrap());
+        }
+
+        println!("What application do you want to launch: ");
+
+        let mut buffer = String::new();
+
+        _= io::stdin().read_line(&mut buffer).unwrap();
+
+        let user_choice = buffer.trim().parse::<usize>();
+
+        if let Ok(user_choice_numerical) = user_choice {
+            match Command::new(installed_apps[user_choice_numerical].path()).status() {
+                Ok(status) => {
+                    println!("Exit status: {}", status);
+                    println!("Returning to the main menu!");
+                },
+                Err(e) => {
+                    eprintln!("Error: {}", e);
+                }
+            }
+        }
+    }
 }
 
 fn some_random_funny() {
     println!("We want to do something random funny!");
 }
 
-fn power_off_device() {
+fn power_off_device(running: &mut bool) {
     println!("We want to power off the device!");
+    println!("This now just kills the program because powering off my pc for a silly test is fairly impractical lmao");
+    *running = false;
 }
 
 fn main() {
 
-    print_main_menu();
+    let mut running: bool = true;
 
-    let user_choice_optional = get_user_choice();
+    while running {
 
-    if user_choice_optional == None {
-        eprintln!("There was no user choice! Quitting");
-        return;
+        print_main_menu();
+
+        let user_choice_optional = get_user_choice();
+
+        if user_choice_optional == None {
+            eprintln!("There was no user choice!");
+            continue;
+        }
+
+        let user_choice_sanitized_result = sanitize_user_input(&user_choice_optional.unwrap());
+
+        if let Ok(user_input_numerical) = user_choice_sanitized_result {
+            match user_input_numerical {
+                1 => launch_applications_menu(),
+                2 => some_random_funny(),
+                3 => power_off_device(&mut running),
+                _ => {
+                    eprintln!("An invalid option was given. Quitting!");
+                    continue;
+                }
+            } // We matched everything when someone does not enter a valid number we just quit the program!
+        }
+
     }
-
-    let user_choice_sanitized_result = sanitize_user_input(&user_choice_optional.unwrap());
-
-    if let Ok(user_input_numerical) = user_choice_sanitized_result {
-        match user_input_numerical {
-            1 => launch_applications_menu(),
-            2 => some_random_funny(),
-            3 => power_off_device(),
-            _ => {
-                eprintln!("An invalid option was given. Quitting!");
-                main(); // TODO: check how you would replace this with another function call that does not overflow the stack within a microsecond :)
-                return;
-            }
-        } // We matched everything when someone does not enter a valid number we just quit the program!
-    }
-
 }
