@@ -2,6 +2,9 @@ use std::{env::home_dir, fs::DirEntry, io, os::unix::process::CommandExt, proces
 
 use colored::Colorize;
 
+use reqwest::{Error};
+use serde_json;
+
 /*
 I want to first make the basics of this application in the main rust file and if it works i want to part it into other files and make it better
 premature optimization and abstraction really halts the development of my application imho. Therefore this way of programming this program.
@@ -89,6 +92,9 @@ fn get_installed_apps() -> Result<Vec<DirEntry>, &'static str> {
 }
 
 fn launch_applications_menu() {
+
+    _= Command::new("clear").status();
+
     println!("Hello this is a list of all the launchable programs that are installed on the system at this moment!");
     
     if let Ok(installed_apps) = get_installed_apps() {
@@ -106,7 +112,7 @@ fn launch_applications_menu() {
         let user_choice = buffer.trim().parse::<usize>();
 
         if let Ok(user_choice_numerical) = user_choice {
-            match Command::new(installed_apps[user_choice_numerical].path()).status() {
+            match Command::new(installed_apps[user_choice_numerical].path()).status() { // TODO: panics now because OOB error
                 Ok(status) => {
                     println!("Exit status: {}", status);
                     println!("Returning to the main menu!");
@@ -117,10 +123,42 @@ fn launch_applications_menu() {
             }
         }
     }
+    // TODO:
+}
+
+fn get_location_international_space_station() -> Option<(f32, f32)> {
+
+    let request_url = "http://api.open-notify.org/iss-now.json".to_string();
+    println!("Going to make a request to: {}", request_url);
+
+    let client = reqwest::blocking::Client::new();
+    let response = client.get(request_url).send();
+
+    if let Ok(response) = response {
+        let data = response.text().unwrap();
+        println!("{}", data);
+        let parsed_json: serde_json::Value = serde_json::from_str(&data).unwrap();
+        let lat = parsed_json["iss_position"]["latitude"]
+        .as_str()?
+        .parse::<f32>()
+        .ok()?;
+        let long = parsed_json["iss_position"]["longitude"]
+        .as_str()?
+        .parse::<f32>()
+        .ok()?;
+        // println!("Long: {}, Lat: {}", parsed_json["iss_position"]["latitude"], parsed_json["iss_position"]["longitude"]);
+        Some((lat, long))
+    } else {
+        None
+    }
 }
 
 fn some_random_funny() {
-    println!("We want to do something random funny!");
+
+    // What funny things can happen?
+    println!("Long: {}, Lat: {}", get_location_international_space_station().unwrap().0, get_location_international_space_station().unwrap().1);
+
+    println!("Those are the exact cordinates of the internation space station :x");
 }
 
 fn power_off_device(running: &mut bool) {
