@@ -1,8 +1,8 @@
-use std::{env::home_dir, fs::DirEntry, io, os::unix::process::CommandExt, process::Command};
+use std::{env::home_dir, fs::DirEntry, io, process::Command};
 
 use colored::Colorize;
 
-use reqwest::{Error};
+use reqwest;
 use serde_json;
 
 /*
