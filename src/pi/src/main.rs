@@ -126,8 +126,22 @@ fn launch_applications_menu() {
     // TODO:
 }
 
+fn terminal_delegate(i: String) {
+    match i.as_str().trim_ascii() {
+        "help" => println!("This is the help function!"),
+        _=> println!("This is not a function that is available yet")
+    }
+}
+
 fn launch_terminal() {
-    println!("This is the terminal that is going to launch!");
+    print!("> ");
+    
+    let mut buffer = String::new();
+    
+    match io::stdin().read_line(&mut buffer) {
+        Ok(_) => terminal_delegate(buffer),
+        Err(e) => println!("Something went wrong with reading your line: {}", e),
+    }
 }
 
 fn get_location_international_space_station() -> Option<(f32, f32)> {
