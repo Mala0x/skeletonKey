@@ -1,4 +1,4 @@
-use std::{env::{self, home_dir}, fs::DirEntry, io, process::Command};
+use std::{env::{self}, fs::DirEntry, io, process::Command};
 
 use colored::Colorize;
 
@@ -43,9 +43,10 @@ fn print_main_menu() {
 
 fn get_user_choice() -> Option<String> {
     let user_choices = [
-        (1, "Launch application"), 
-        (2, "Something random funny xD"),
-        (3, "Power off device")
+        (1, "Launch application"),
+        (2, "Launch terminal"),
+        (3, "Something random funny xD"),
+        (4, "Power off device")
     ]; // Nicely formatted list of what the user can choose in the first screen
 
     for choice in user_choices {
@@ -125,6 +126,10 @@ fn launch_applications_menu() {
     // TODO:
 }
 
+fn launch_terminal() {
+    println!("This is the terminal that is going to launch!");
+}
+
 fn get_location_international_space_station() -> Option<(f32, f32)> {
 
     let request_url = "http://api.open-notify.org/iss-now.json".to_string();
@@ -150,6 +155,7 @@ fn get_location_international_space_station() -> Option<(f32, f32)> {
     } else {
         None
     }
+
 }
 
 fn some_random_funny() {
@@ -196,8 +202,9 @@ fn main() {
         if let Ok(user_input_numerical) = user_choice_sanitized_result {
             match user_input_numerical {
                 1 => launch_applications_menu(),
-                2 => some_random_funny(),
-                3 => power_off_device(&mut running),
+                2 => launch_terminal(),
+                3 => some_random_funny(),
+                4 => power_off_device(&mut running),
                 _ => {
                     eprintln!("An invalid option was given. Try again!");
                     continue;
