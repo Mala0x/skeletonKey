@@ -1,4 +1,4 @@
-use std::{env::home_dir, fs::DirEntry, io, process::Command};
+use std::{env::{self, home_dir}, fs::DirEntry, io, process::Command};
 
 use colored::Colorize;
 
@@ -75,9 +75,8 @@ fn sanitize_user_input(user_choice: &String) -> Result<u16, &'static str> {
 }
 
 fn get_installed_apps() -> Result<Vec<DirEntry>, &'static str> {
-    if let Some(home_dir) = home_dir() {
-        // TODO: make this a non hardcoded path string
-        let application_folder = std::fs::read_dir(home_dir.as_path().join("Documents/Programming/skeletonKey/apps"));
+    if let Ok(path) =  env::current_dir() {
+        let application_folder = std::fs::read_dir(path.join("../../apps"));
 
         let mut application_vec: Vec<DirEntry> = vec![];
         
@@ -101,7 +100,7 @@ fn launch_applications_menu() {
 
         for (index, app) in installed_apps.iter().enumerate() {
             println!("{}: {}", index, app.file_name().into_string().unwrap());
-        }
+        } // If the directory apps is not found i think besides panicing the program just saying hey yk i made the folder for you 
 
         println!("What application do you want to launch: ");
 
@@ -157,8 +156,17 @@ fn some_random_funny() {
 
     // What funny things can happen?
     println!("Long: {}, Lat: {}", get_location_international_space_station().unwrap().0, get_location_international_space_station().unwrap().1);
+    // This could be way way way nicer this looks really ugly and has the potential to panic and crash the program
 
-    println!("Those are the exact cordinates of the internation space station :x");
+    println!("Those are the exact cordinates of the international space station :x");
+
+    let path = env::current_dir().unwrap();
+    println!("{}", path.display());
+    let app_paths = std::fs::read_dir(path.join("../../apps"));
+    for app in app_paths.unwrap() {
+        println!("{:?}", app.unwrap());
+    }
+
 }
 
 fn power_off_device(running: &mut bool) {
@@ -183,6 +191,7 @@ fn main() {
         }
 
         let user_choice_sanitized_result = sanitize_user_input(&user_choice_optional.unwrap());
+        // We check if it is none before this point so using unwrap here is safe and will not panic the program
 
         if let Ok(user_input_numerical) = user_choice_sanitized_result {
             match user_input_numerical {
@@ -190,11 +199,12 @@ fn main() {
                 2 => some_random_funny(),
                 3 => power_off_device(&mut running),
                 _ => {
-                    eprintln!("An invalid option was given. Quitting!");
+                    eprintln!("An invalid option was given. Try again!");
                     continue;
                 }
             } // We matched everything when someone does not enter a valid number we just quit the program!
         }
 
     }
+
 }
